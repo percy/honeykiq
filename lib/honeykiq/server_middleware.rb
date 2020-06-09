@@ -10,7 +10,7 @@ module Honeykiq
       job = Sidekiq::Job.new(msg, queue_name)
       queue = Sidekiq::Queue.new(queue_name)
 
-      start_span(name: job.display_class) do |event|
+      start_span(name: job.display_class, serialized_trace: msg['serialized_trace']) do |event|
         call_with_event(event, job, queue) { yield }
       end
     end
@@ -27,7 +27,7 @@ module Honeykiq
       !!libhoney
     end
 
-    def start_span(name:)
+    def start_span(name:, serialized_trace:)
       if libhoney?
         libhoney.event.tap do |event|
           duration_ms(event) { yield event }
@@ -35,7 +35,7 @@ module Honeykiq
           event.send
         end
       else
-        Honeycomb.start_span(name: name) { |event| yield event }
+        Honeycomb.start_span(name: name, serialized_trace: serialized_trace) { |event| yield event }
       end
     end
 
