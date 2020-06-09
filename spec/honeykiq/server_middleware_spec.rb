@@ -191,6 +191,7 @@ RSpec.describe Honeykiq::ServerMiddleware do
       Honeycomb.configure do |config|
         config.client = libhoney
       end
+
       Sidekiq::Testing.server_middleware do |chain|
         chain.clear
         chain.add test_class
@@ -198,5 +199,32 @@ RSpec.describe Honeykiq::ServerMiddleware do
     end
 
     it_behaves_like 'sends event with all fields'
+
+    context 'when using Honeykiq::ClientMiddleware is set' do
+      before do
+        Sidekiq::Worker.clear_all
+
+        Sidekiq.configure_client do |config|
+          config.client_middleware do |chain|
+            chain.clear
+            chain.add Honeykiq::ClientMiddleware
+          end
+        end
+      end
+
+      it 'propagates the trace' do
+        parent_span = nil
+
+        Honeycomb.start_span(name: 'test') do |span|
+          parent_span = span
+
+          TestSidekiqWorker.perform_async
+        end
+
+        event_data = libhoney.events.first.data
+
+        expect(event_data).to include('trace.parent_id' => parent_span.id)
+      end
+    end
   end
 end
