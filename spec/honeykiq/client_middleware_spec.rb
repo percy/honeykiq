@@ -36,7 +36,6 @@ RSpec.describe Honeykiq::ClientMiddleware do
         TestSidekiqWorker.perform_async
       end
 
-
       job = TestSidekiqWorker.jobs.first
 
       expect(job['serialized_trace']).to eq(expected_span.to_trace_header)
@@ -44,7 +43,6 @@ RSpec.describe Honeykiq::ClientMiddleware do
   end
 
   context 'when not within a span' do
-
     it 'does not set serialized_trace' do
       TestSidekiqWorker.perform_async
 
