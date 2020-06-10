@@ -223,9 +223,7 @@ RSpec.describe Honeykiq::ServerMiddleware do
           TestSidekiqWorker.perform_async
         end
 
-        event_data = libhoney.events.first.data
-
-        expect(event_data).to include(
+        expect(libhoney.events.first.data).to include(
           'trace.link.trace_id': parent_span.trace.id,
           'trace.link.span_id': parent_span.id,
           'meta.span_type': 'link',
