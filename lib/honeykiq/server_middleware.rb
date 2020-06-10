@@ -92,15 +92,13 @@ module Honeykiq
     def link_to_enqueuing_trace(current, serialized_trace)
       trace_id, parent_span_id, = TraceParser.parse(serialized_trace)
 
-      Honeycomb.libhoney.event.tap do |event|
-        {
-          'trace.link.trace_id': trace_id,
-          'trace.link.span_id': parent_span_id,
-          'meta.span_type': 'link',
-          'trace.parent_id': current.id,
-          'trace.trace_id': current.trace.id
-        }.each { |k, v| event.add_field(k, v) }
-      end.send
+      Honeycomb.libhoney.event.add(
+        'trace.link.trace_id': trace_id,
+        'trace.link.span_id': parent_span_id,
+        'meta.span_type': 'link',
+        'trace.parent_id': current.id,
+        'trace.trace_id': current.trace.id
+      ).send
     end
 
     def duration_ms(event)
