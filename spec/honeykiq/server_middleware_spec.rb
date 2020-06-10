@@ -201,6 +201,18 @@ RSpec.describe Honeykiq::ServerMiddleware do
     it_behaves_like 'sends event with all fields'
 
     context 'when using Honeykiq::ClientMiddleware' do
+      subject(:enqueue) do
+        parent_span = nil
+
+        Honeycomb.start_span(name: 'test') do |span|
+          parent_span = span
+
+          TestSidekiqWorker.perform_async
+        end
+
+        parent_span
+      end
+
       before do
         Sidekiq::Worker.clear_all
 
@@ -215,13 +227,7 @@ RSpec.describe Honeykiq::ServerMiddleware do
       end
 
       it 'propagates the trace' do
-        parent_span = nil
-
-        Honeycomb.start_span(name: 'test') do |span|
-          parent_span = span
-
-          TestSidekiqWorker.perform_async
-        end
+        parent_span = enqueue
 
         expect(libhoney.events.first.data).to include(
           'trace.link.trace_id': parent_span.trace.id,
