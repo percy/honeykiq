@@ -210,6 +210,8 @@ RSpec.describe Honeykiq::ServerMiddleware do
             chain.add Honeykiq::ClientMiddleware
           end
         end
+
+        libhoney.reset
       end
 
       it 'propagates the trace' do
@@ -223,7 +225,13 @@ RSpec.describe Honeykiq::ServerMiddleware do
 
         event_data = libhoney.events.first.data
 
-        expect(event_data).to include('trace.parent_id' => parent_span.id)
+        expect(event_data).to include(
+          'trace.link.trace_id': parent_span.trace.id,
+          'trace.link.span_id': parent_span.id,
+          'meta.span_type': 'link',
+          'trace.parent_id': kind_of(String),
+          'trace.trace_id': kind_of(String)
+        )
       end
     end
   end

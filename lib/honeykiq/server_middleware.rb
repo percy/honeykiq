@@ -35,7 +35,11 @@ module Honeykiq
           event.send
         end
       else
-        Honeycomb.start_span(name: name, serialized_trace: serialized_trace) { |event| yield event }
+        Honeycomb.start_span(name: name) do |event|
+          link_to_enqueuing_trace(event, serialized_trace)
+
+          yield event
+        end
       end
     end
 
@@ -77,6 +81,23 @@ module Honeykiq
       }
     end
 
+    def link_to_enqueuing_trace(current, serialized_trace)
+      return unless serialized_trace
+
+      trace_id, parent_span_id, _, _ = TraceParser.parse(serialized_trace)
+
+      event = Honeycomb.libhoney.event
+      {
+        'trace.link.trace_id': trace_id,
+        'trace.link.span_id': parent_span_id,
+        'meta.span_type': 'link',
+        'trace.parent_id': current.id,
+        'trace.trace_id': current.trace.id
+      }.each { |k, v| event.add_field(k, v) }
+
+      event.send
+    end
+
     def duration_ms(event)
       start_time = Time.now
       yield
@@ -97,4 +118,8 @@ module Honeykiq
       )
     end
   end
+
+  class TraceParser
+    extend Honeycomb::PropagationParser
+  end if defined?(Honeycomb)
 end
