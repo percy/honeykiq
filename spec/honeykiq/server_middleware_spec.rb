@@ -200,7 +200,7 @@ RSpec.describe Honeykiq::ServerMiddleware do
 
     it_behaves_like 'sends event with all fields'
 
-    context 'when using Honeykiq::ClientMiddleware is set' do
+    context 'when using Honeykiq::ClientMiddleware' do
       before do
         Sidekiq::Worker.clear_all
 
